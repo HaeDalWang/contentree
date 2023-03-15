@@ -27,6 +27,44 @@ module "vpc" {
 }
 
 #---------------------------------------------------------------
-# 노드들이 사용 할 ENI 생성
+# ENI
+# pri: master2, ha1 ,worker3(app,infra,storage), jenkins,Harbor1
+# pub: squidproxy1, ingressnode1
 #---------------------------------------------------------------
 
+resource "aws_network_interface" "master1" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.16"]
+}
+resource "aws_network_interface" "master2" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.17"]
+}
+resource "aws_network_interface" "ha1" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.30"]
+}
+resource "aws_network_interface" "worker1" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.19"]
+}
+resource "aws_network_interface" "worker2" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.20"]
+}
+resource "aws_network_interface" "worker3" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.21"]
+}
+resource "aws_network_interface" "ci" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.46.32"]
+}
+resource "aws_network_interface" "squid" {
+  subnet_id   = module.vpc.public_subnets[0]
+  private_ips = ["10.150.44.18"]
+}
+resource "aws_network_interface" "ingress" {
+  subnet_id   = module.vpc.private_subnets[0]
+  private_ips = ["10.150.44.16"]
+}
