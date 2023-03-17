@@ -25,6 +25,23 @@ module "vpc" {
 
   tags = local.tags
 }
+## NAT를 대신할 squid 프록시 라우팅 규칙
+resource "aws_route_table" "squid-proxy" {
+  vpc_id = module.vpc.vpc_id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    network_interface_id = aws_network_interface.squid
+  }
+  tags = {
+    Name = "squid"
+  }
+}
+
+resource "aws_route_table_association" "squid-proxy" {
+  subnet_id      = module.vpc.private_subnets[0]
+  route_table_id = aws_route_table.squid-proxy.id
+}
 
 #---------------------------------------------------------------
 # ENI

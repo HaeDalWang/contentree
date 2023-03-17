@@ -74,7 +74,6 @@ resource "aws_security_group" "kubernetes" {
   }
 }
 
-## 수정해야함 Squid 쪽으로 ㄱㄷ
 resource "aws_security_group_rule" "kubernetes_egress" {
   security_group_id = aws_security_group.kubernetes.id
 
