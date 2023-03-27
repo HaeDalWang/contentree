@@ -32,58 +32,6 @@ resource "aws_instance" "ansible-controller" {
   }
 }
 
-resource "aws_security_group" "kubernetes" {
-  name_prefix = "kubernetes-"
-  description = "Security group for Kubernetes cluster"
-  vpc_id      =  module.vpc.vpc_id
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-    ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 2379
-    to_port     = 2380
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 10250
-    to_port     = 10255
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group_rule" "kubernetes_egress" {
-  security_group_id = aws_security_group.kubernetes.id
-
-  type        = "egress"
-  from_port   = 0
-  to_port     = 0
-  protocol    = "-1"
-  cidr_blocks = ["0.0.0.0/0"]
-}
-
 #---------------------------------------------------------------
 #  인스턴스 생성 
 # pri: master2, ha1 ,worker3(app,infra,storage), jenkins,Harbor1
@@ -94,40 +42,36 @@ resource "aws_security_group_rule" "kubernetes_egress" {
 resource "aws_instance" "master1" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.small"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
-
   network_interface {
-    network_interface_id = aws_network_interface.master1
+    network_interface_id = aws_network_interface.master1.id
+    device_index = 0
   }
   tags = {
     Name = "master-1"
   }
 }
-resource "aws_instance" "master2" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.small"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
-    network_interface_id = aws_network_interface.master2
-  }
-  tags = {
-    Name = "master-2"
-  }
-}
+# resource "aws_instance" "master2" {
+#   ami                    = data.aws_ami.amazon_linux_2.id
+#   instance_type          = "t3.small"
+#   key_name               = data.aws_key_pair.ansible.key_name
+#   network_interface {
+#     network_interface_id = aws_network_interface.master2.id
+#     device_index = 0
+#   }
+#   tags = {
+#     Name = "master-2"
+#   }
+# }
 
 ## Haproxy
 resource "aws_instance" "haproxy" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.small"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.ha1
+    network_interface_id = aws_network_interface.ha1.id
+    device_index = 0
   }
   tags = {
     Name = "haproxy"
@@ -138,11 +82,10 @@ resource "aws_instance" "haproxy" {
 resource "aws_instance" "Squidproxy" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.small"
-  subnet_id              = module.vpc.public_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.squid
+    network_interface_id = aws_network_interface.squid.id
+    device_index = 0
   }
   tags = {
     Name = "squid-proxy"
@@ -150,14 +93,13 @@ resource "aws_instance" "Squidproxy" {
 }
 
 ## ingress
-resource "aws_instance" "Squidproxy" {
+resource "aws_instance" "ingress" {
   ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.small"
-  subnet_id              = module.vpc.public_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
+  instance_type          = "t3.medium"
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.ingress
+    network_interface_id = aws_network_interface.ingress.id
+    device_index = 0
   }
   tags = {
     Name = "ingress-node"
@@ -168,11 +110,10 @@ resource "aws_instance" "Squidproxy" {
 resource "aws_instance" "worker1" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.medium"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.worker1
+    network_interface_id = aws_network_interface.worker1.id
+    device_index = 0
   }
   tags = {
     Name = "worker-1"
@@ -181,11 +122,10 @@ resource "aws_instance" "worker1" {
 resource "aws_instance" "worker2" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.medium"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.worker2
+    network_interface_id = aws_network_interface.worker2.id
+    device_index = 0
   }
   tags = {
     Name = "worker-2"
@@ -194,11 +134,10 @@ resource "aws_instance" "worker2" {
 resource "aws_instance" "worker3" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.medium"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.worker3
+    network_interface_id = aws_network_interface.worker3.id
+    device_index = 0
   }
   tags = {
     Name = "worker-3"
@@ -208,11 +147,10 @@ resource "aws_instance" "worker3" {
 resource "aws_instance" "ci" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = "t3.medium"
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [aws_security_group.kubernetes.id]
   key_name               = data.aws_key_pair.ansible.key_name
   network_interface {
-    network_interface_id = aws_network_interface.ci
+    network_interface_id = aws_network_interface.ci.id
+    device_index = 0
   }
   tags = {
     Name = "jenkins&Harbor"
