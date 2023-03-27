@@ -21,10 +21,6 @@ kube_pods_subnet: 10.233.64.0/23
 kubelet_image_gc_high_threshold: 70
 kubelet_image_gc_low_threshold: 60
 
-# HA mode 
-#loadbalancer_apiserver:
-#  address: 10.150.46.30
-
 
 # Hardening
 ## kube-apiserver

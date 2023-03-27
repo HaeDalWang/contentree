@@ -6,8 +6,6 @@ all:
   hosts:
     mvd-kubecp01:
       ansible_host: 10.150.46.16
-    mvd-kubecp02:
-      ansible_host: 10.150.46.17
     mvd-kubewk01:
       ansible_host: 10.150.46.19
     mvd-kubewk02:
@@ -16,26 +14,23 @@ all:
       ansible_host: 10.150.46.21
     mvd-kubert01:
       ansible_host: 10.150.44.16
-    mvd-haporxy:
-      ansible_host: 10.150.46.30
   children:
-    private:
-      hosts:
-        mvd-kubecp01:
-        mvd-kubecp02:
-        mvd-kubewk01:
-        mvd-kubewk02:
-        mvd-kubewk03:
-      vars:
-        http_proxy: "http://10.150.44.18:3128"
-        https_proxy: "http://10.150.44.18:3128"
+    # private:
+    #   hosts:
+    #     mvd-kubecp01:
+    #     mvd-kubecp02:
+    #     mvd-kubewk01:
+    #     mvd-kubewk02:
+    #     mvd-kubewk03:
+    #   vars:
+    #     http_proxy: "http://10.150.44.18:3128"
+    #     https_proxy: "http://10.150.44.18:3128"
     router:
       hosts:
         mvd-kubert01:
     kube_control_plane:
       hosts:
         mvd-kubecp01:
-        mvd-kubecp02:
     kube_node:
       hosts:
         mvd-kubewk01:
@@ -49,8 +44,3 @@ all:
       children:
         kube_control_plane:
         kube_node:
-    kube_haproxy:
-      hosts:
-        mvd-kubeha01:
-      vars:
-        haproxy_vip: 10.150.46.249
