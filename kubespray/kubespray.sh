@@ -6,4 +6,4 @@ docker run \
 --mount type=bind,source="$(pwd)",dst=/kubespray/inventory \
 --mount type=bind,source=/root/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
 --env ANSIBLE_HOST_KEY_CHECKING=False \
-kubespray:latest sleep infinity
+quay.io/kubespray/kubespray:v2.21.0 sleep infinity
