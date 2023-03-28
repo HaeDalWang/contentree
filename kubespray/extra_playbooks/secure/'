@@ -1,0 +1,39 @@
+---
+- name: Complements CIS result
+  hosts: kube_control_plane
+  tasks:
+  - name: 1.1.9 Ensure that the Container Network Interface file permissions are set to 600 or more restrictive
+      file:
+        path: /etc/cni/net.d
+        mode: "600"
+        recurse: yes
+        state: directory
+
+  - name: 1.1.20 Ensure that the Kubernetes PKI certificate file permissions are set to 600 or more restrictive
+    block:
+      - name: 1.1.20 - Find files.
+        find:
+          paths: /etc/kubernetes/pki
+          patterns: "*.crt"
+        register: crt_glob
+
+      - name: 1.1.20 - Check permissions.
+        file:
+          path: ""
+          mode: "600"
+          state: file
+        with_items:
+          - ""
+            
+  - name: 1.2.1 Ensure that the --anonymous-auth argument is set to false
+    lineinfile:
+      path: /etc/kubernetes/manifests/kube-apiserver.yaml
+      regexp: '^    - --anonymous-auth=True'
+      line: "    - --anonymous-auth=False"
+
+  - name: 1.2.12 Ensure that the admission control plugin SecurityContextDeny is set if PodSecurityPolicy is not used
+    shell: grep enable-admission-plugins /etc/kubernetes/manifests/kube-apiserver.yaml | grep SecurityContextDeny
+    register: security_content_deny_flag
+    check_mode: no
+    changed_when: no
+    failed_when: security_content_deny_flag.rc == 0 

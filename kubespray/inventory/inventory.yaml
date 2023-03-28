@@ -1,0 +1,46 @@
+all:
+  vars:
+    ansible_port: 22
+    ansible_user: ubuntu
+    ansible_become: yes
+  hosts:
+    mvd-kubecp01:
+      ansible_host: 10.150.46.16
+    mvd-kubewk01:
+      ansible_host: 10.150.46.19
+    mvd-kubewk02:
+      ansible_host: 10.150.46.20
+    mvd-kubewk03:
+      ansible_host: 10.150.46.21
+    mvd-kubert01:
+      ansible_host: 10.150.44.16
+  children:
+    #private:
+    # hosts:
+    #   mvd-kubecp01:
+    #   mvd-kubecp02:
+    #   mvd-kubewk01:
+    #   mvd-kubewk02:
+    #   mvd-kubewk03:
+    # vars:
+    #   http_proxy: "http://10.150.44.18:3128"
+    #   https_proxy: "http://10.150.44.18:3128"
+    router:
+      hosts:
+        mvd-kubert01:
+    kube_control_plane:
+      hosts:
+        mvd-kubecp01:
+    kube_node:
+      hosts:
+        mvd-kubewk01:
+        mvd-kubewk02:
+        mvd-kubewk03:
+        mvd-kubert01:
+    etcd:
+      hosts:
+        mvd-kubecp01:
+    k8s_cluster:
+      children:
+        kube_control_plane:
+        kube_node:
