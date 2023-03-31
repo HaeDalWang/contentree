@@ -1,0 +1,11 @@
+controller:
+  hostNetwork: true
+  kind: DaemonSet
+  service:
+    type: ClusterIP
+  metrics:
+    enabled: true
+    ServiceMonitor:
+      enabled: true
+  nodeSelector:
+    role: router

@@ -1,0 +1,27 @@
+repositories:
+- name: ingress-nginx
+  url: https://kubernetes.github.io/ingress-nginx
+- name: rook-release
+  url: https://charts.rook.io/release
+
+releases:
+- name: ingress-nginx
+  namespace: ingress-nginx
+  chart: ingress-nginx/ingress-nginx
+  createNamespace: true
+  values:
+  - ./values/ingress-nginx.yaml
+
+- name: rook-ceph
+  namespace: rook-ceph
+  chart: rook-release/rook-ceph
+  createNamespace: true
+  values:
+  - ./values/rook-ceph.yaml
+
+- name: rook-ceph-cluster
+  namespace: rook-ceph
+  chart: rook-release/rook-ceph-cluster
+  createNamespace: true
+  values:
+  - ./values/rook-ceph-cluster.yaml
