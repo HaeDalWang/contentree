@@ -25,9 +25,22 @@ all:
     # vars:
     #   http_proxy: "http://10.150.44.18:3128"
     #   https_proxy: "http://10.150.44.18:3128"
+    kube_worker:
+      hosts:
+        mvd-kubewk01:
+        mvd-kubewk02:
+        mvd-kubewk03:
+      vars:
+        node_labels:
+          role: worker
+          node-role.kubernetes.io/worker: ""
     router:
       hosts:
         mvd-kubert01:
+      vars:
+        node_labels:
+          role: router
+          node-role.kubernetes.io/router: ""
     kube_control_plane:
       hosts:
         mvd-kubecp01:

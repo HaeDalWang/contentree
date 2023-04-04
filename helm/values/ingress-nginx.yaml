@@ -3,6 +3,8 @@ controller:
   kind: DaemonSet
   service:
     type: ClusterIP
+    targetPorts:
+      https: http
   metrics:
     enabled: true
     ServiceMonitor:

@@ -3,25 +3,40 @@ repositories:
   url: https://kubernetes.github.io/ingress-nginx
 - name: rook-release
   url: https://charts.rook.io/release
+- name: metrics-server
+  url: https://kubernetes-sigs.github.io/metrics-server/
+- name: prometheus-community
+  url: https://prometheus-community.github.io/helm-charts
+
+helmDefaults:
+  createNamespace: true
 
 releases:
 - name: ingress-nginx
   namespace: ingress-nginx
   chart: ingress-nginx/ingress-nginx
-  createNamespace: true
+  version: 4.6.0
   values:
   - ./values/ingress-nginx.yaml
 
 - name: rook-ceph
   namespace: rook-ceph
   chart: rook-release/rook-ceph
-  createNamespace: true
+  version: v1.11.2
   values:
   - ./values/rook-ceph.yaml
 
 - name: rook-ceph-cluster
   namespace: rook-ceph
   chart: rook-release/rook-ceph-cluster
-  createNamespace: true
+  version: v1.11.2
   values:
   - ./values/rook-ceph-cluster.yaml
+
+- name: kube-prometheus-stack
+  namespace: monitoring
+  chart: prometheus-community/kube-prometheus-stack
+  version: 45.8.1
+  disableValidationOnInstall: true
+  values:
+  - ./values/kube-prometheus-stack.yaml

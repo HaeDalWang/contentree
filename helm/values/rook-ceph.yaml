@@ -1,0 +1,7 @@
+nodeSelector:
+  role: worker
+
+csi:
+  enableCephfsDriver: false
+  enableCephfsSnapshotter: false
+  enableNFSSnapshotter: false
