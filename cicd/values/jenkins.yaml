@@ -1,0 +1,10 @@
+controller:
+  adminPassword: "bsd0705!"
+  ingress:
+    enabled: true
+    hostName: jenkins.51bsd.click
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    ingressClassName: nginx
+

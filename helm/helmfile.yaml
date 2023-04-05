@@ -30,8 +30,11 @@ releases:
   namespace: rook-ceph
   chart: rook-release/rook-ceph-cluster
   version: v1.11.2
+  disableValidationOnInstall: true
   values:
   - ./values/rook-ceph-cluster.yaml
+  needs:
+  - rook-ceph
 
 - name: kube-prometheus-stack
   namespace: monitoring
@@ -40,3 +43,6 @@ releases:
   disableValidationOnInstall: true
   values:
   - ./values/kube-prometheus-stack.yaml
+  needs:
+  - rook-release/rook-ceph-cluster
+  - ingress-nginx/ingress-nginx
