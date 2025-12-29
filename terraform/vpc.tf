@@ -54,7 +54,7 @@ resource "aws_security_group" "kubernetes" {
   description = "Security group for Kubernetes cluster (kubespray)"
   vpc_id      = module.vpc.vpc_id
 
-  # SSH 접근
+  # SSH 접근 - 외부에서 접근 가능 (관리용)
   ingress {
     description = "SSH"
     from_port   = 22
@@ -63,7 +63,7 @@ resource "aws_security_group" "kubernetes" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTP/HTTPS
+  # HTTP/HTTPS - 외부에서 접근 가능 (Ingress 노드용)
   ingress {
     description = "HTTP"
     from_port   = 80
@@ -79,97 +79,97 @@ resource "aws_security_group" "kubernetes" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Kubernetes API Server
-  ingress {
-    description = "Kubernetes API Server"
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # etcd client/server
-  ingress {
-    description = "etcd client/server"
-    from_port   = 2379
-    to_port     = 2380
-    protocol    = "tcp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  # kubelet API
-  ingress {
-    description = "kubelet API"
-    from_port   = 10250
-    to_port     = 10250
-    protocol    = "tcp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  # kube-scheduler
-  ingress {
-    description = "kube-scheduler"
-    from_port   = 10259
-    to_port     = 10259
-    protocol    = "tcp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  # kube-controller-manager
-  ingress {
-    description = "kube-controller-manager"
-    from_port   = 10257
-    to_port     = 10257
-    protocol    = "tcp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  # NodePort 서비스 범위
-  ingress {
-    description = "NodePort Services"
-    from_port   = 30000
-    to_port     = 32767
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Calico BGP (bird 백엔드)
-  ingress {
-    description = "Calico BGP"
-    from_port   = 179
-    to_port     = 179
-    protocol    = "tcp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  # Calico IPIP (protocol 4)
-  ingress {
-    description = "Calico IPIP"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "4"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  # VPC 내부 전체 통신 (클러스터 내부 통신용)
-  ingress {
-    description = "VPC internal communication"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-  ingress {
-    description = "VPC internal communication (UDP)"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "udp"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
   tags = merge(local.tags, {
     Name = "kubernetes-sg"
   })
+}
+
+# 보안그룹 내부 통신 규칙 (self-referencing)
+resource "aws_security_group_rule" "kubernetes_internal" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "-1"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "Security group internal communication"
+}
+
+# Kubernetes API Server - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "kubernetes_api" {
+  type                     = "ingress"
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "Kubernetes API Server (internal only)"
+}
+
+# etcd client/server - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "etcd" {
+  type                     = "ingress"
+  from_port                = 2379
+  to_port                  = 2380
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "etcd client/server (internal only)"
+}
+
+# kubelet API - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "kubelet" {
+  type                     = "ingress"
+  from_port                = 10250
+  to_port                  = 10250
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "kubelet API (internal only)"
+}
+
+# kube-scheduler - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "kube_scheduler" {
+  type                     = "ingress"
+  from_port                = 10259
+  to_port                  = 10259
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "kube-scheduler (internal only)"
+}
+
+# kube-controller-manager - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "kube_controller_manager" {
+  type                     = "ingress"
+  from_port                = 10257
+  to_port                  = 10257
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "kube-controller-manager (internal only)"
+}
+
+# NodePort 서비스 범위 - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "nodeport" {
+  type                     = "ingress"
+  from_port                = 30000
+  to_port                  = 32767
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "NodePort Services (internal only)"
+}
+
+# Calico BGP - 보안그룹 내부에서만 접근
+resource "aws_security_group_rule" "calico_bgp" {
+  type                     = "ingress"
+  from_port                = 179
+  to_port                  = 179
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.kubernetes.id
+  security_group_id        = aws_security_group.kubernetes.id
+  description              = "Calico BGP (internal only)"
 }
 
 resource "aws_security_group_rule" "kubernetes_egress" {

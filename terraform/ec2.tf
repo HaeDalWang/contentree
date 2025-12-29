@@ -27,6 +27,16 @@ resource "aws_instance" "ansible-controller" {
   subnet_id                   = module.vpc.public_subnets[0]
   key_name                    = data.aws_key_pair.ansible.key_name
   associate_public_ip_address = true # 자동 퍼블릭 IP 할당 활성화
+  iam_instance_profile        = aws_iam_instance_profile.ssm_profile.name
+  vpc_security_group_ids      = [aws_security_group.kubernetes.id]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # SSM Agent 설치 및 시작
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+  EOF
 
   tags = merge(local.tags, {
     Name = "ansible-controller"
@@ -41,9 +51,18 @@ resource "aws_instance" "ansible-controller" {
 
 ## Master Node (Control Plane)
 resource "aws_instance" "master1" {
-  ami           = data.aws_ami.ubuntu_24_lts.id
-  instance_type = "t3.medium"
-  key_name      = data.aws_key_pair.ansible.key_name
+  ami                  = data.aws_ami.ubuntu_24_lts.id
+  instance_type        = "t3.medium"
+  key_name             = data.aws_key_pair.ansible.key_name
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # SSM Agent 설치 및 시작
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+  EOF
 
   primary_network_interface {
     network_interface_id = aws_network_interface.master1.id
@@ -57,9 +76,18 @@ resource "aws_instance" "master1" {
 
 ## Worker Nodes
 resource "aws_instance" "worker1" {
-  ami           = data.aws_ami.ubuntu_24_lts.id
-  instance_type = "t3.medium"
-  key_name      = data.aws_key_pair.ansible.key_name
+  ami                  = data.aws_ami.ubuntu_24_lts.id
+  instance_type        = "t3.medium"
+  key_name             = data.aws_key_pair.ansible.key_name
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # SSM Agent 설치 및 시작
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+  EOF
 
   primary_network_interface {
     network_interface_id = aws_network_interface.worker1.id
@@ -72,9 +100,18 @@ resource "aws_instance" "worker1" {
 }
 
 resource "aws_instance" "worker2" {
-  ami           = data.aws_ami.ubuntu_24_lts.id
-  instance_type = "t3.medium"
-  key_name      = data.aws_key_pair.ansible.key_name
+  ami                  = data.aws_ami.ubuntu_24_lts.id
+  instance_type        = "t3.medium"
+  key_name             = data.aws_key_pair.ansible.key_name
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # SSM Agent 설치 및 시작
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+  EOF
 
   primary_network_interface {
     network_interface_id = aws_network_interface.worker2.id
@@ -88,9 +125,18 @@ resource "aws_instance" "worker2" {
 
 ## Ingress Node (Public Subnet)
 resource "aws_instance" "ingress" {
-  ami           = data.aws_ami.ubuntu_24_lts.id
-  instance_type = "t3.medium"
-  key_name      = data.aws_key_pair.ansible.key_name
+  ami                  = data.aws_ami.ubuntu_24_lts.id
+  instance_type        = "t3.medium"
+  key_name             = data.aws_key_pair.ansible.key_name
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # SSM Agent 설치 및 시작
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+  EOF
 
   primary_network_interface {
     network_interface_id = aws_network_interface.ingress.id
