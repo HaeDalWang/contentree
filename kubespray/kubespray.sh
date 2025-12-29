@@ -18,6 +18,7 @@ fi
 echo "Kubespray 컨테이너를 백그라운드에서 실행합니다..."
 
 docker run --name kubespray \
+  --hostname SALT-K8S \
   --network host \
   --detach \
   --restart always \
