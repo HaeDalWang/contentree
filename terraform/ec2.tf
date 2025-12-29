@@ -1,5 +1,5 @@
-## Amazon linux2 AMI
-data "aws_ami" "amazon_linux_2" {
+## Ubuntu 24.04 LTS AMI
+data "aws_ami" "ubuntu_24_lts" {
   most_recent = true
   filter {
     name   = "virtualization-type"
@@ -7,7 +7,7 @@ data "aws_ami" "amazon_linux_2" {
   }
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
   }
   owners = ["099720109477"]
 }
@@ -22,137 +22,93 @@ data "aws_key_pair" "ansible" {
 
 ## ansible controller Instance 
 resource "aws_instance" "ansible-controller" {
-  ami           = data.aws_ami.amazon_linux_2.id
-  instance_type = "t3.small"
-  subnet_id     = module.vpc.public_subnets[0]
+  ami                         = data.aws_ami.ubuntu_24_lts.id
+  instance_type               = "t3.small"
+  subnet_id                   = module.vpc.public_subnets[0]
+  key_name                    = data.aws_key_pair.ansible.key_name
+  associate_public_ip_address = true # 자동 퍼블릭 IP 할당 활성화
+
+  tags = merge(local.tags, {
+    Name = "ansible-controller"
+    Role = "ansible-controller"
+  })
+}
+
+#---------------------------------------------------------------
+#  Kubernetes 클러스터 인스턴스 생성
+#  구성: 1 master, 2 worker, 1 ingress
+#---------------------------------------------------------------
+
+## Master Node (Control Plane)
+resource "aws_instance" "master1" {
+  ami           = data.aws_ami.ubuntu_24_lts.id
+  instance_type = "t3.medium"
   key_name      = data.aws_key_pair.ansible.key_name
 
-  tags = {
-    Name = "ansible-controller"
-  }
-}
-
-#---------------------------------------------------------------
-#  인스턴스 생성 
-# pri: master2, ha1 ,worker3(app,infra,storage), jenkins,Harbor1
-# pub: squidproxy1, ingressnode1
-#---------------------------------------------------------------
-
-## 2 master instance
-resource "aws_instance" "master1" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.small"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
+  primary_network_interface {
     network_interface_id = aws_network_interface.master1.id
-    device_index = 0
   }
-  tags = {
-    Name = "master-1"
-  }
-}
-# resource "aws_instance" "master2" {
-#   ami                    = data.aws_ami.amazon_linux_2.id
-#   instance_type          = "t3.small"
-#   key_name               = data.aws_key_pair.ansible.key_name
-#   network_interface {
-#     network_interface_id = aws_network_interface.master2.id
-#     device_index = 0
-#   }
-#   tags = {
-#     Name = "master-2"
-#   }
-# }
 
-## Haproxy
-resource "aws_instance" "haproxy" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.small"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
-    network_interface_id = aws_network_interface.ha1.id
-    device_index = 0
-  }
-  tags = {
-    Name = "haproxy"
-  }
+  tags = merge(local.tags, {
+    Name = "k8s-master-1"
+    Role = "master"
+  })
 }
 
-## Squid proxy
-resource "aws_instance" "Squidproxy" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.small"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
-    network_interface_id = aws_network_interface.squid.id
-    device_index = 0
-  }
-  tags = {
-    Name = "squid-proxy"
-  }
-}
-
-## ingress
-resource "aws_instance" "ingress" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.medium"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
-    network_interface_id = aws_network_interface.ingress.id
-    device_index = 0
-  }
-  tags = {
-    Name = "ingress-node"
-  }
-}
-
-## 3 worker instance
+## Worker Nodes
 resource "aws_instance" "worker1" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.medium"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
+  ami           = data.aws_ami.ubuntu_24_lts.id
+  instance_type = "t3.medium"
+  key_name      = data.aws_key_pair.ansible.key_name
+
+  primary_network_interface {
     network_interface_id = aws_network_interface.worker1.id
-    device_index = 0
   }
-  tags = {
-    Name = "worker-1"
-  }
+
+  tags = merge(local.tags, {
+    Name = "k8s-worker-1"
+    Role = "worker"
+  })
 }
+
 resource "aws_instance" "worker2" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.medium"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
+  ami           = data.aws_ami.ubuntu_24_lts.id
+  instance_type = "t3.medium"
+  key_name      = data.aws_key_pair.ansible.key_name
+
+  primary_network_interface {
     network_interface_id = aws_network_interface.worker2.id
-    device_index = 0
   }
-  tags = {
-    Name = "worker-2"
-  }
+
+  tags = merge(local.tags, {
+    Name = "k8s-worker-2"
+    Role = "worker"
+  })
 }
-resource "aws_instance" "worker3" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.medium"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
-    network_interface_id = aws_network_interface.worker3.id
-    device_index = 0
+
+## Ingress Node (Public Subnet)
+resource "aws_instance" "ingress" {
+  ami           = data.aws_ami.ubuntu_24_lts.id
+  instance_type = "t3.medium"
+  key_name      = data.aws_key_pair.ansible.key_name
+
+  primary_network_interface {
+    network_interface_id = aws_network_interface.ingress.id
   }
-  tags = {
-    Name = "worker-3"
-  }
+
+  tags = merge(local.tags, {
+    Name = "k8s-ingress-1"
+    Role = "ingress"
+  })
 }
-## Jenkins & Harbor
-resource "aws_instance" "ci" {
-  ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.medium"
-  key_name               = data.aws_key_pair.ansible.key_name
-  network_interface {
-    network_interface_id = aws_network_interface.ci.id
-    device_index = 0
-  }
-  tags = {
-    Name = "jenkins&Harbor"
-  }
+
+# Ingress 노드용 고정 퍼블릭 IP (EIP) 할당
+resource "aws_eip" "ingress" {
+  domain                    = "vpc"
+  network_interface         = aws_network_interface.ingress.id
+  associate_with_private_ip = "10.233.10.15"
+
+  tags = merge(local.tags, {
+    Name = "ingress-eip"
+  })
 }
