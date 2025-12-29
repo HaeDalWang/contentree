@@ -22,5 +22,5 @@ echo "=========================================="
 ansible-playbook -i /kubespray/inventory/inventory.yaml \
   --extra-vars "@/kubespray/inventory/variables.yaml" \
   --become --become-user=root \
-  cluster.yml
+  /kubespray/cluster.yml
 
