@@ -3,14 +3,15 @@ kubectl_localhost: true
 kubeconfig_localhost: true
 artifacts_dir: /kubespray/artifacts/
 
-## 버전  
-kube_version: v1.25.6
-calico_version: v3.24.5
-containerd_Version: 1.6.15
+## 버전 (v1.31.2 - 2025년 기준 안정 버전)
+kube_version: v1.31.2
+calico_version: v3.28.1
+containerd_version: 1.7.22
 
-## Cluster confige
+## Cluster config
 kube_network_plugin: calico
 kube_proxy_mode: ipvs
+container_manager: containerd
 
 # Calico CNI
 calico_ipip_mode: Always
@@ -23,108 +24,55 @@ kube_network_node_prefix: 24
 # Image GC
 kubelet_image_gc_high_threshold: 70
 kubelet_image_gc_low_threshold: 60
+
 #########################################################
-# Hardening
-## kube-apiserver
-authorization_modes: ['Node', 'RBAC']
-# AppArmor-based OS
-# kube_apiserver_feature_gates: ['AppArmor=true']
-kube_apiserver_request_timeout: 120s
-kube_apiserver_service_account_lookup: true
+# Hardening 및 보안 설정 (v1.31 호환) - 주석 처리됨
+# authorization_modes: ['Node', 'RBAC']
+# kubernetes_audit: true
+# audit_log_path: "/var/log/kube-apiserver-log.json"
+# audit_log_maxage: 30
+# audit_log_maxbackups: 10
+# audit_log_maxsize: 100
 
-# enable kubernetes audit
-kubernetes_audit: true
-audit_log_path: "/var/log/kube-apiserver-log.json"
-audit_log_maxage: 30
-audit_log_maxbackups: 10
-audit_log_maxsize: 100
+# TLS 설정
+# tls_min_version: VersionTLS12
+# tls_cipher_suites:
+#   - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+#   - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+#   - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
 
-tls_min_version: VersionTLS12
-tls_cipher_suites:
-  - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-  - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+# Encryption at rest
+# kube_encrypt_secret_data: true
 
-# enable encryption at rest
-kube_encrypt_secret_data: true
-kube_encryption_resources: [secrets]
-kube_encryption_algorithm: "secretbox"
+## Admission Plugins
+# kube_apiserver_enable_admission_plugins:
+#   - EventRateLimit
+#   - AlwaysPullImages
+#   - ServiceAccount
+#   - NamespaceLifecycle
+#   - NodeRestriction
+#   - LimitRanger
+#   - ResourceQuota
+#   - MutatingAdmissionWebhook
+#   - ValidatingAdmissionWebhook
+#   - PodNodeSelector
+#   - PodSecurity
 
-## CIS 1.2.12 SecurityContextDeny
-kube_apiserver_enable_admission_plugins:
-  - EventRateLimit
-  - AlwaysPullImages
-  - ServiceAccount
-  - NamespaceLifecycle
-  - NodeRestriction
-  - LimitRanger
-  - ResourceQuota
-  - MutatingAdmissionWebhook
-  - ValidatingAdmissionWebhook
-  - PodNodeSelector
-  - PodSecurity
-  - SecurityContextDeny
-kube_apiserver_admission_control_config_file: true
-# EventRateLimit plugin configuration
-kube_apiserver_admission_event_rate_limits:
-  limit_1:
-    type: Namespace
-    qps: 50
-    burst: 100
-    cache_size: 2000
-  limit_2:
-    type: User
-    qps: 50
-    burst: 100
-kube_profiling: false
+## Kubelet 보안
+# kubelet_authorization_mode_webhook: true
+# kubelet_authentication_token_webhook: true
+# kube_read_only_port: 0
+# kubelet_rotate_server_certificates: true
+# kubelet_protect_kernel_defaults: true
+# kubelet_rotate_certificates: true
+# kubelet_streaming_connection_idle_timeout: "5m"
+# kubelet_make_iptables_util_chains: true
+# kubelet_feature_gates: ["RotateKubeletServerCertificate=true", "SeccompDefault=true"]
+# kubelet_seccomp_default: true
+# kubelet_systemd_hardening: true
 
-## kube-controller-manager
-kube_controller_manager_bind_address: 127.0.0.1
-kube_controller_terminated_pod_gc_threshold: 50
-# AppArmor-based OS
-# kube_controller_feature_gates: ["RotateKubeletServerCertificate=true", "AppArmor=true"]
-kube_controller_feature_gates: ["RotateKubeletServerCertificate=true"]
-
-## kube-scheduler
-kube_scheduler_bind_address: 127.0.0.1
-kube_kubeadm_scheduler_extra_args:
-  profiling: false
-# AppArmor-based OS
-# kube_scheduler_feature_gates: ["AppArmor=true"]
-
-## etcd
-etcd_deployment_type: kubeadm
-
-## kubelet
-kubelet_authorization_mode_webhook: true
-kubelet_authentication_token_webhook: true
-kube_read_only_port: 0
-kubelet_rotate_server_certificates: true
-kubelet_protect_kernel_defaults: true
-kubelet_event_record_qps: 1
-kubelet_rotate_certificates: true
-kubelet_streaming_connection_idle_timeout: "5m"
-kubelet_make_iptables_util_chains: true
-kubelet_feature_gates: ["RotateKubeletServerCertificate=true", "SeccompDefault=true"]
-kubelet_seccomp_default: true
-kubelet_systemd_hardening: true
-# In case you have multiple interfaces in your
-# control plane nodes and you want to specify the right
-# IP addresses, kubelet_secure_addresses allows you
-# to specify the IP from which the kubelet
-# will receive the packets.
-#kubelet_secure_addresses: "192.168.10.110 192.168.10.111 192.168.10.112"
-
-# additional configurations
+# 추가 설정
 kube_owner: root
 kube_cert_group: root
-
-# create a default Pod Security Configuration and deny running of insecure pods
-# kube_system namespace is exempted by default
-kube_pod_security_use_default: true
-kube_pod_security_default_enforce: restricted
-########################################3
-# 4.2.8
-#kube_override_hostname:
-#kubelet_custom_flags:
-#  - "--hostname-override=false"
+# kube_pod_security_use_default: true
+# kube_pod_security_default_enforce: restricted
