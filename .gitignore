@@ -42,3 +42,6 @@ terraform.rc
 
 # Lambda build artifacts
 mlops/lambdas/build/
+# Secrets - 절대 커밋 금지!
+helm/argocd-github-secret.yaml
+*.secret.yaml

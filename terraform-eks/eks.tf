@@ -1,0 +1,319 @@
+# EKS 클러스터 및 관리형 노드 그룹 (통합)
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "21.10.1" # 최신화 2025년 12월 11일
+
+  name               = local.project
+  kubernetes_version = var.eks_cluster_version
+
+  vpc_id                   = module.vpc.vpc_id
+  subnet_ids               = module.vpc.private_subnets
+  control_plane_subnet_ids = module.vpc.intra_subnets
+
+  endpoint_public_access  = true
+  endpoint_private_access = true
+
+  # 클러스터를 생성한 IAM 객체에서 쿠버네티스 어드민 권한 할당
+  enable_cluster_creator_admin_permissions = true
+  # Nodepool에서 태그기반으로도 가져갈 수 있도록 선언
+  node_security_group_tags = {
+    "karpenter.sh/discovery" = local.project
+  }
+  # 노드 보안그룹 생성
+  create_node_security_group = true
+
+  # 로깅 비활성화 - 변수처리
+  enabled_log_types = []
+
+  # 애드온들
+  # before_compute = true로 설정하면 노드 그룹 생성 전에 설치됨
+  # vpc-cni와 kube-proxy는 노드가 Ready 상태가 되기 위해 필수이므로 먼저 설치
+  addons = {
+    vpc-cni = {
+      before_compute = true  # 노드 그룹 생성 전에 설치 (필수)
+      most_recent    = true
+    }
+    kube-proxy = {
+      before_compute = true  # 노드 그룹 생성 전에 설치 (필수)
+      most_recent    = true
+    }
+    coredns = {
+      before_compute = true  # 노드 그룹 생성 전에 설치 (필수)
+      # 클러스터 버전에 맞게 최신 버전을 동적으로 불러와서 적용
+      most_recent = true
+      configuration_values = jsonencode({
+        # 관리형 노드 그룹에 배포
+        nodeSelector = {
+          workload  = "system"
+          nodegroup = "system"
+        }
+        tolerations = [
+          {
+            key      = "workload"
+            operator = "Equal"
+            value    = "system"
+            effect   = "NoSchedule"
+          }
+        ]
+        resources = {
+          limits = {
+            cpu    = "0.25"
+            memory = "256M"
+          }
+          requests = {
+            cpu    = "0.25"
+            memory = "256M"
+          }
+        }
+      })
+    }
+    # eks-pod-identity-agent = {
+    #   most_recent = true
+    # }
+    # aws-ebs-csi-driver = {
+    #   most_recent = true
+    # }
+    # snapshot-controller = {
+    #   most_recent = true
+    # }
+  }
+  # 관리형 노드 그룹 통합
+  eks_managed_node_groups = {
+    system = {
+      name                 = "${local.project_prefix}-system-node"
+      use_name_prefix      = true  # true로 설정하면 이름에 랜덤 서픽스가 추가되어 충돌 방지
+      subnet_ids           = module.vpc.private_subnets
+      
+      # 켜두면 맨날 최신버전이라 업그레이드를 너무 자주해야함, 왜냐하면 최신버전 ami만 바라봄
+      use_latest_ami_release_version = false
+      ami_type                       = "AL2023_x86_64_STANDARD"
+      capacity_type                  = "ON_DEMAND"
+      instance_types                 = ["t3a.small"]
+      desired_size                   = 2
+      min_size                       = 2
+      max_size                       = 2
+
+      # IAM Role 생성 + 기본 EKS 노드 정책 부착
+      create_iam_role            = true
+      iam_role_attach_cni_policy = true
+
+      # 시스템 워크로드만 스케줄되도록 테인트
+      labels = {
+        workload                        = "system"
+        nodegroup                       = "system"
+        "node-role.kubernetes.io/system" = "true"
+      }
+      taints = {
+        workload = {
+          key    = "workload"
+          value  = "system"
+          effect = "NO_SCHEDULE"
+        }
+      }
+
+      tags = local.tags
+    }
+  }
+}
+
+# Karpenter를 배포할 네임 스페이스
+resource "kubernetes_namespace" "karpenter" {
+  metadata {
+    name = "karpenter"
+  }
+}
+
+# Karpenter 구성에 필요한 AWS 리소스 생성
+module "karpenter" {
+  source    = "terraform-aws-modules/eks/aws//modules/karpenter"
+  version   = "21.6.1" # 최신화 2025년 10월 23일
+  namespace = kubernetes_namespace.karpenter.metadata[0].name
+
+  cluster_name                  = module.eks.cluster_name
+  node_iam_role_name            = "${module.eks.cluster_name}-node-role"
+  node_iam_role_use_name_prefix = false
+
+  # Pod Identity는 Fargate을 지원하지 않음
+  create_pod_identity_association = false
+
+  # Controller IAM Policy 이름 고정 (IRSA에서 참조하기 위해)
+  iam_policy_name            = "KarpenterController-${module.eks.cluster_name}"
+  iam_policy_use_name_prefix = false
+
+  # Karpenter가 생성할 노드에 부여할 역할에 기본 정책 이외에 추가할 IAM 정책
+  node_iam_role_additional_policies = {
+    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    AmazonEBSCSIDriverPolicy     = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  }
+
+  # Delete시 Coredns가 마지막으로 삭제되도록 의존성 추가
+  depends_on = [
+    module.eks
+    # aws_eks_addon.coredns
+  ]
+}
+
+# Karpenter module이 생성한 Controller IAM Policy 조회
+data "aws_iam_policy" "karpenter_controller" {
+  name = "KarpenterController-${module.eks.cluster_name}"
+
+  depends_on = [module.karpenter]
+}
+
+# Karpenter IRSA
+module "karpenter_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = "6.2.2" # 최신화 2025년 10월 23일
+
+  name = "KarpenterController-${module.eks.cluster_name}-irsa"
+
+  # Karpenter module이 생성한 policy를 재사용
+  policies = {
+    karpenter = data.aws_iam_policy.karpenter_controller.arn
+  }
+
+  oidc_providers = {
+    cotong = {
+      provider_arn = module.eks.oidc_provider_arn
+      namespace_service_accounts = [
+        "karpenter:karpenter"
+      ]
+    }
+  }
+}
+
+# Karpenter CRDs
+# 분리해서 설치 시 karpenter chart에서 "skip_crds = true" 옵션 사용 필수
+resource "helm_release" "karpenter-crd" {
+  name       = "karpenter-crd"
+  repository = "oci://public.ecr.aws/karpenter"
+  chart      = "karpenter-crd"
+  version    = var.karpenter_chart_version
+  namespace  = kubernetes_namespace.karpenter.metadata[0].name
+}
+
+# Karpenter 메인 차트
+resource "helm_release" "karpenter" {
+  name       = "karpenter"
+  repository = "oci://public.ecr.aws/karpenter"
+  chart      = "karpenter"
+  version    = var.karpenter_chart_version
+  namespace  = kubernetes_namespace.karpenter.metadata[0].name
+
+  skip_crds = true
+
+  values = [
+    <<-EOT
+    settings:
+      clusterName: ${module.eks.cluster_name}
+      clusterEndpoint: ${module.eks.cluster_endpoint}
+      interruptionQueue: ${module.karpenter.queue_name}
+      featureGates:
+        spotToSpotConsolidation: true
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: ${module.karpenter_irsa.arn}
+    controller:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 250Mi
+    nodeSelector:
+      workload: system
+      nodegroup: system
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: system
+        effect: NoSchedule
+    EOT
+  ]
+
+  depends_on = [
+    helm_release.karpenter-crd,
+    module.karpenter_irsa,
+  ]
+}
+
+# Karpenter 기본 노드 클래스
+# - id: ${module.eks.cluster_primary_security_group_id}
+resource "kubectl_manifest" "karpenter_default_node_class" {
+  yaml_body = <<-YAML
+    apiVersion: karpenter.k8s.aws/v1
+    kind: EC2NodeClass
+    metadata:
+      name: default
+    spec:
+      amiSelectorTerms:
+      - alias: "${var.eks_node_ami_alias_al2023}"
+      role: ${module.karpenter.node_iam_role_name}
+      subnetSelectorTerms:
+      - tags:
+          karpenter.sh/discovery: ${module.eks.cluster_name}
+      securityGroupSelectorTerms:
+      - id: ${module.eks.node_security_group_id}
+      blockDeviceMappings:
+      - deviceName: /dev/xvda
+        ebs:
+          volumeSize: 20Gi
+          volumeType: gp3
+          encrypted: true
+      metadataOptions:
+        httpEndpoint: enabled
+        httpTokens: optional
+        httpPutResponseHopLimit: 2
+      tags:
+        ${jsonencode(local.tags)}
+    YAML
+
+  depends_on = [
+    helm_release.karpenter
+  ]
+}
+
+# Karpenter 기본 노드 풀
+resource "kubectl_manifest" "karpenter_default_nodepool" {
+  yaml_body = <<-YAML
+    apiVersion: karpenter.sh/v1
+    kind: NodePool
+    metadata:
+      name: default
+    spec:
+      template:
+        spec:
+          expireAfter: 720h
+          requirements:
+          - key: kubernetes.io/arch
+            operator: In
+            values: ["amd64", "arm64"]
+          - key: kubernetes.io/os
+            operator: In
+            values: ["linux"]
+          - key: topology.kubernetes.io/zone
+            operator: In
+            values: ["ap-northeast-2a", "ap-northeast-2b", "ap-northeast-2c", "ap-northeast-2d"]
+          - key: karpenter.sh/capacity-type
+            operator: In
+            values: ["spot", "on-demand"]
+          - key: karpenter.k8s.aws/instance-family
+            operator: In
+            values: ["t3", "t3a", "t4g", "c5", "c5a", "c6g", "c6i", "c7g", "c7i", "m5", "m5a", "m6g", "m7g"]
+          - key: karpenter.k8s.aws/instance-size
+            operator: In
+            values: ["large","xlarge"]
+          nodeClassRef:
+            apiVersion: karpenter.k8s.aws/v1
+            kind: EC2NodeClass
+            name: "default"
+            group: karpenter.k8s.aws
+      limits:
+        cpu: 10
+      disruption:
+        consolidationPolicy: WhenEmptyOrUnderutilized 
+        consolidateAfter: 30s
+    YAML
+
+  depends_on = [
+    kubectl_manifest.karpenter_default_node_class
+  ]
+}

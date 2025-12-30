@@ -1,0 +1,25 @@
+global:
+  domain: ${domain}
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+server:
+#   ingress:
+#     enabled: true
+#     ingressClassName: nginx
+  httproute:
+    enabled: true
+    hostnames:
+      - "argocd.joins.seungdobae.com"
+    parentRefs:
+      - name: eg
+        namespace: envoy-gateway-system
+        sectionName: https
+configs:
+  secret:
+    # Saltware1234! 의 bcrypt 해시 (htpasswd로 생성)
+    argocdServerAdminPassword: "$2a$10$GLQZ9LfzP2UDsw3ctj9PA.lx9uTyivuA8iYl1.q/qnYW63L6Ovrii"
+  params:
+    "server.insecure": true

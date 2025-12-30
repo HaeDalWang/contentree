@@ -1,0 +1,49 @@
+---
+# GitHub 리포지토리 인증 정보
+# ⚠️ Secret은 별도 파일로 관리 (argocd-github-secret.yaml)
+# kubectl apply -f argocd-github-secret.yaml (수동 적용)
+---
+# Argo CD 프로젝트
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: contentree
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: contentree 환경
+  sourceRepos:
+    - "*"
+  destinations:
+    - name: "*"
+      server: "*"
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-echo-envoy
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: contentree
+  sources:
+    - repoURL: https://github.com/HaeDalWang/ingress-controller-test.git
+      targetRevision: HEAD
+      path: chart
+      helm:
+        releaseName: ingress-echo-envoy
+        valueFiles:
+          - values_envoy.yaml
+  destination:
+    name: in-cluster
+    namespace: app
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated: {}

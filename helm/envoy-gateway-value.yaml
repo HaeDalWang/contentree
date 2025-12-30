@@ -1,0 +1,13 @@
+# config:
+#   envoyGateway:
+#     provider:
+#       type: Kubernetes
+#       kubernetes:
+#         envoyDeployment:
+#           kind: DaemonSet
+#         envoyPod:
+#           hostNetwork: true
+#           nodeSelector:
+#             role: router
+#         envoyService:
+#           type: ClusterIP

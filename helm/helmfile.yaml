@@ -1,48 +1,23 @@
 repositories:
-- name: ingress-nginx
-  url: https://kubernetes.github.io/ingress-nginx
-- name: rook-release
-  url: https://charts.rook.io/release
-- name: metrics-server
-  url: https://kubernetes-sigs.github.io/metrics-server/
-- name: prometheus-community
-  url: https://prometheus-community.github.io/helm-charts
-
-helmDefaults:
-  createNamespace: true
+  - name: envoyproxy
+    url: docker.io/envoyproxy
+    oci: true
+  - name: argocd
+    url: https://argoproj.github.io/argo-helm
 
 releases:
-- name: ingress-nginx
-  namespace: ingress-nginx
-  chart: ingress-nginx/ingress-nginx
-  version: 4.6.0
-  values:
-  - ./values/ingress-nginx.yaml
-
-- name: rook-ceph
-  namespace: rook-ceph
-  chart: rook-release/rook-ceph
-  version: v1.11.2
-  values:
-  - ./values/rook-ceph.yaml
-
-- name: rook-ceph-cluster
-  namespace: rook-ceph
-  chart: rook-release/rook-ceph-cluster
-  version: v1.11.2
-  disableValidationOnInstall: true
-  values:
-  - ./values/rook-ceph-cluster.yaml
-  needs:
-  - rook-ceph
-
-- name: kube-prometheus-stack
-  namespace: monitoring
-  chart: prometheus-community/kube-prometheus-stack
-  version: 45.8.1
-  disableValidationOnInstall: true
-  values:
-  - ./values/kube-prometheus-stack.yaml
-  needs:
-  - rook-release/rook-ceph-cluster
-  - ingress-nginx/ingress-nginx
+  # cert-manager는 Terraform에서 관리 (terraform-eks/cert-manager.tf)
+  - name: envoy-gateway
+    namespace: envoy-gateway-system
+    chart: envoyproxy/gateway-helm
+    version: 1.6.1
+    # values:
+    #   - envoy-gateway-value.yaml
+    wait: true
+  - name: argocd
+    namespace: argocd
+    chart: argocd/argo-cd
+    version: 9.2.3
+    values:
+      - values/argocd.yaml
+    wait: true

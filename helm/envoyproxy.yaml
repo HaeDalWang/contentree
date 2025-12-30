@@ -1,0 +1,46 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-config
+  namespace: envoy-gateway-system
+spec:
+  logging:
+    level:
+      default: debug
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDaemonSet:
+        pod:
+          nodeSelector:
+            role: router
+          tolerations:
+          - key: "role"
+            operator: "Equal"
+            value: "router"
+            effect: "NoSchedule"
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              template:
+                spec:
+                  # hostNetwork: true
+                  # dnsPolicy: ClusterFirstWithHostNet
+                  containers:
+                  # - securityContext:
+                  #     capabilities:
+                  #       add:
+                  #       - NET_BIND_SERVICE
+                  - name: envoy
+                    ports:
+                    - containerPort: 10080
+                      hostPort: 80          
+                      name: http
+                      protocol: TCP
+                    - containerPort: 10443
+                      hostPort: 443         
+                      name: https
+                      protocol: TCP
+      envoyService:
+        type: ClusterIP

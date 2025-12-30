@@ -1,0 +1,30 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg
+  namespace: envoy-gateway-system
+spec:
+  gatewayClassName: eg
+  # GatewayClass랑 중복되는거 같음
+  # infrastructure:
+  #   parametersRef:
+  #     group: gateway.envoyproxy.io
+  #     kind: EnvoyProxy
+  #     name: envoy-config
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: tls-joins-letsencrypt  # Let's Encrypt 인증서 (cert-manager가 생성)
