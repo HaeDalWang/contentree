@@ -90,9 +90,6 @@ sudo cp kubectl /usr/local/bin/kubectl
 echo "source <(kubectl completion bash)" >> ~/.bashrc
 source ~/.bashrc
 
-
-
-
 ## 재설정 및 재적용
 # 클러스터 리셋
 {
@@ -101,3 +98,19 @@ ansible-playbook -i inventory/inventory.yaml \
   --become --become-user=root \
   reset.yml
 }
+
+
+# 버전 업그레이드
+
+1. 확인부터 하기
+kubespray 버전 확인하기
+https://github.com/kubernetes-sigs/kubespray/releases
+-> 큐브스프레이에서 지원되는 쿠버네티스랑 각종 플러그인 정리 꼭하기
+
+변수 확인 꼭 하기
+https://kubespray.io/#/docs/ansible/vars
+
+2. 큐브스프레이 다시 실행 버전 바꿔서
+3. 변수 파일 맞게 조정
+
+4. 명령어 실행
