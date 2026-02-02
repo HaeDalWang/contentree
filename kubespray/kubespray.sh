@@ -3,7 +3,7 @@
 # 실행 경로 설정
 KUBESPRAY_DIR=$(pwd)
 INVENTORY_DIR="${KUBESPRAY_DIR}/inventory"
-IMAGE="quay.io/kubespray/kubespray:v2.26.0"
+IMAGE="quay.io/kubespray/kubespray:v2.26.0" # kubernetes 1.30.4가 기본값인 컨테이너
 
 # 필요한 디렉토리 생성
 mkdir -p "${KUBESPRAY_DIR}/artifacts"

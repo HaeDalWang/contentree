@@ -3,10 +3,9 @@ kubectl_localhost: true
 kubeconfig_localhost: true
 artifacts_dir: /kubespray/artifacts/
 
-## 버전 (v1.31.2 - 2025년 기준 안정 버전)
-kube_version: v1.31.2
-calico_version: v3.28.1
-containerd_version: 1.7.22
+kube_version: v1.29.15
+# calico_version: v3.28.1
+# containerd_version: 1.7.22
 
 ## Cluster config
 kube_network_plugin: calico
@@ -22,8 +21,8 @@ kube_pods_subnet: 10.233.64.0/18
 kube_network_node_prefix: 24
 
 # Image GC
-kubelet_image_gc_high_threshold: 70
-kubelet_image_gc_low_threshold: 60
+# kubelet_image_gc_high_threshold: 70
+# kubelet_image_gc_low_threshold: 60
 
 #########################################################
 # Hardening 및 보안 설정 (v1.31 호환) - 주석 처리됨
