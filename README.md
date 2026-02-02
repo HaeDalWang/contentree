@@ -50,7 +50,7 @@ ansible all -i inventory/inventory.yaml -m ping
 확인되면 클러스터 배포 시작
 {
 ansible-playbook -i inventory/inventory.yaml \
-  --extra-vars "@/inventory/variables.yaml" \
+  --extra-vars "@inventory/variables.yaml" \
   --become --become-user=root \
   cluster.yml
 }
