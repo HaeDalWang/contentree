@@ -4,8 +4,8 @@ kubeconfig_localhost: true
 artifacts_dir: /kubespray/artifacts/
 
 kube_version: v1.29.15
-# calico_version: v3.28.1
-# containerd_version: 1.7.22
+calico_version: v3.28.1
+containerd_version: 1.7.21
 
 ## Cluster config
 kube_network_plugin: calico
