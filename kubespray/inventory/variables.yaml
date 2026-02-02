@@ -3,7 +3,7 @@ kubectl_localhost: true
 kubeconfig_localhost: true
 artifacts_dir: /kubespray/artifacts/
 
-kube_version: v1.29.15
+kube_version: v1.30.4
 calico_version: v3.28.1
 containerd_version: 1.7.21
 
