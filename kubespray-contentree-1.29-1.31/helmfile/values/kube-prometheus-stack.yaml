@@ -1,11 +1,7 @@
 fullnameOverride: kube-prometheus
 prometheusOperator:
-  nodeSelector:
-    role: infra
   admissionWebhooks:
     patch:
-      nodeSelector:
-        role: infra
 prometheus:
   ingress:
     enabled: true
@@ -20,8 +16,6 @@ prometheus:
     retention: 30d
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
-    nodeSelector:
-      role: infra
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -43,8 +37,6 @@ alertmanager:
         send_resolved: true
 
   alertmanagerSpec:
-    nodeSelector:
-      role: infra
   ingress:
     enabled: true
     ingressClassName: nginx
@@ -59,8 +51,6 @@ grafana:
     existingSecret: grafana
   plugins:
   - grafana-piechart-panel
-  nodeSelector:
-    role: infra
   ingress:
     enabled: true
     ingressClassName: nginx
