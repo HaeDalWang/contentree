@@ -122,6 +122,17 @@ resource "aws_security_group_rule" "kubernetes_api" {
   description              = "Kubernetes API"
 }
 
+# Ansible/jump(퍼블릭 서브넷)에서 API 접근용 — 10.150.44.0/24
+resource "aws_security_group_rule" "kubernetes_api_from_public" {
+  type              = "ingress"
+  from_port         = 6443
+  to_port           = 6443
+  protocol          = "tcp"
+  cidr_blocks       = [module.vpc.public_subnets_cidr_blocks[0]]
+  security_group_id = aws_security_group.kubernetes.id
+  description       = "Kubernetes API from public subnet (Ansible/jump)"
+}
+
 resource "aws_security_group_rule" "etcd" {
   type                     = "ingress"
   from_port                = 2379
