@@ -1,11 +1,13 @@
-# 워커 노드 기준 룩셉 테스트. operator는 CP에도 올릴 수 있게 해서 워커 CPU 부족 완화
+# 워커 노드 기준 룩셉 테스트. operator는 CP에도 올릴 수 있게
 nodeSelector: {}
 tolerations:
   - key: node-role.kubernetes.io/control-plane
     operator: Exists
     effect: NoSchedule
-# CSI는 워커에만 (스토리지 노드와 동일)
+# Ubuntu 24.04: rbd 모듈 zstd 압축 → csi-rbdplugin modprobe 실패. RBD CSI 비활성화, CephFS만 사용
 csi:
+  enableRbdDriver: false
+  enableCephfsDriver: true
   provisionerNodeAffinity: role=worker
   pluginNodeAffinity: role=worker,infra
   provisionerReplicas: 1

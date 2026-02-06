@@ -71,35 +71,44 @@ resource "aws_network_interface" "mvd_kubert01" {
 #---------------------------------------------------------------
 # 보안그룹 (Kubernetes / Calico / etcd / kubelet 등)
 #---------------------------------------------------------------
+# 인라인 ingress 없이 생성. 모든 규칙은 aws_security_group_rule로 관리해 apply 시 규칙이 삭제되지 않음
 resource "aws_security_group" "kubernetes" {
   name_prefix = "k8s-poc-"
   description = "Kubernetes POC (kubespray minimal, k8s node CIDR aligned)"
   vpc_id      = module.vpc.vpc_id
 
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = merge(local.tags, { Name = "kubernetes-poc-sg" })
+}
+
+# 기존 SG에 22/80/443이 이미 있으면: terraform import aws_security_group_rule.ssh <rule_id> (및 http, https)
+resource "aws_security_group_rule" "ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.kubernetes.id
+  description       = "SSH"
+}
+
+resource "aws_security_group_rule" "http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.kubernetes.id
+  description       = "HTTP"
+}
+
+resource "aws_security_group_rule" "https" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.kubernetes.id
+  description       = "HTTPS"
 }
 
 resource "aws_security_group_rule" "kubernetes_internal" {
