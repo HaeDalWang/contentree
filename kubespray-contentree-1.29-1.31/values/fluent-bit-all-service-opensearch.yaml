@@ -1,0 +1,200 @@
+#envFrom:
+#- secretRef:
+#    name: fluent-bit-opensearch-secret
+config:
+  inputs: |
+    [INPUT]
+        Name             tail     
+        Tag              app.*
+        Path             /var/log/containers/*_app-*.log
+        #Path             /var/log/containers/*ingress-nginx*.log
+        multiline.parser cri
+        #Mem_Buf_Limit    5MB
+        #Skip_Long_Lines  On
+        Skip_Empty_Lines On
+        Refresh_Interval    5
+        Mem_Buf_Limit       1024MB
+        Buffer_Chunk_Size   128MB
+        Buffer_Max_Size     256MB
+        Skip_Long_Lines     Off
+  filters: |
+    [FILTER]
+        Name                  grep
+        Match                 *
+        Exclude               log (^$|\/n) 
+        #Exclude               log (^$) 
+
+    [FILTER]
+        Name                parser
+        Match               app.*
+        Key_Name            log
+        Parser              nginx
+
+    [FILTER]
+        Name                grep
+        Match               *
+        Exclude             agent kube-probe
+
+    [FILTER]
+        Name                kubernetes
+        Match               *
+        Kube_Tag_Prefix     app.var.log.containers.
+        Merge_Log           On
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+        Annotations         Off
+
+    #### multiline
+    [FILTER]
+        Name                  multiline
+        Match                 app.*
+        multiline.key_content log
+        multiline.parser      java
+        buffer                On
+        emitter_mem_buf_limit 512M
+        #multiline.parser      multiline-java-custom #Do not use! perf issue.
+
+    ####### app log filter
+    [FILTER]
+        Name                parser
+        Match               app.*
+        Key_Name            log
+        Parser              spring-boot-log-level
+        Reserve_Data        On
+        Preserve_Key        On
+
+    #[FILTER]
+        #Name                kubernetes
+        #Match               app.*
+        #Kube_Tag_Prefix     app.var.log.containers.
+        #Merge_Log           On
+        #Keep_Log            Off
+        #K8S-Logging.Parser  On
+        #K8S-Logging.Exclude On
+        #Annotations         Off
+
+    [FILTER]
+        Name                nest
+        Match               app.*
+        Operation           lift
+        Nested_under        kubernetes
+        Add_prefix          kubernetes.
+
+    [FILTER]
+        Name                modify
+        Match               app.*
+        Remove              kubernetes.pod_id
+        Remove              kubernetes.container_hash
+        #Remove              kubernetes.container_name
+        Remove              kubernetes.docker_id
+
+    [FILTER]
+        Name                nest
+        Match               app.*
+        Operation           lift
+        Nested_under        kubernetes.labels
+        Add_prefix          kubernetes_labels.
+
+    [FILTER]
+        Name                modify
+        Match               app.*
+        Remove              kubernetes_labels.pod-template-hash
+        Remove              kubernetes_labels.app.kubernetes.io/name
+
+    [FILTER]
+        Name                nest
+        Match               app.*
+        Operation           nest
+        Wildcard            kubernetes_labels.*
+        Nest_under          kubernetes.labels
+        Remove_prefix       kubernetes_labels.
+
+    [FILTER]
+        Name                nest
+        Match               app.*
+        Operation           nest
+        Wildcard            kubernetes.*
+        Nested_under        kubernetes
+        Remove_prefix       kubernetes.
+
+
+    ####### ingress log filter
+    [FILTER]
+        Name                parser
+        Match               ingress.*
+        Key_Name            log
+        #Parser              ingress-nginx
+        Parser              custom-ingress-nginx
+        Reserve_Data        On
+        Preserve_Key        On
+
+
+        #    [FILTER]
+        #Name modify
+        #Match *
+        #Rename log message
+
+
+
+  outputs: |
+    [OUTPUT]
+        Name                opensearch
+        Match               app.*
+        #Host                elasticsearch.elasticsearch.svc.cluster.local
+        #Port                9200
+        #Host                10.50.103.87  # ak8s1 dev
+        # ak8s1 prod L4
+        Host                10.50.25.200
+        Port                31921
+        tls                 On
+        tls.verify          Off
+        # secret으로 변수로 입력하면 동작 안됨. 아래처럼 직접 입력해야함  
+        #HTTP_User           ${elasticsearch-user}
+        #HTTP_Passwd         ${elasticsearch-password}
+        HTTP_User           admin
+        HTTP_Passwd         Infra!@34
+        Logstash_Format     On
+        Logstash_Prefix     all_service
+        #Logstash_Prefix_Key $kubernetes['container_name']
+        #Logstash_Prefix_Key $kubernetes['namespace_name']
+        #Logstash_Prefix_Key $kubernetes['labels']['app.kubernetes.io/instance']
+        Logstash_DateFormat %Y.%m
+        Retry_Limit         False
+        Suppress_Type_Name  On
+        Buffer_Size         32MB
+
+
+  customParsers: |
+    [MULTILINE_PARSER]
+        name          multiline-java
+        type          regex
+        key_content   log
+        #flush_timeout 1000
+        rule          "start_state"   "/^(\d{4}-\d{1,2}-\d{1,2})(.*)|^Hibernate/"  "cont"
+        #rule          "cont"          "/^(?!\d{4}).*|^Hibernate.*/"   "cont"
+        #rule          "cont"          "/^[^(\d{4})(Hibernate)].*/"   "cont"
+        rule          "cont"          "/^(?!\d{4})(?!Hibernate).*/"   "cont"
+
+        # ori
+        #rule          "start_state"   "/^(\d{4}-\d{1,2}-\d{1,2})(.*)/"  "cont"
+        #rule          "cont"          "/^[^(\d{4})].*/"   "cont"
+        #rule          "cont"          "/^.*/"   "cont"
+        #rule          "cont"          "/^[^\d].*/"   "cont"
+        #rule          "cont"          "/^(\s+|org|java|Caused|ERROR|Exception|\/t).*/"                                                 "cont"
+    [PARSER]
+        Name        spring-boot-log-level
+        Format      regex
+        Regex       ^(?<log_date>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+\d{2}:\d{2}|\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})(\s+)(?<level>[A-Z]+) (?<log_message>.*)$ 
+    [PARSER]
+        Name        ingress-nginx
+        Format      regex
+        Regex       ^(?<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+\+\d{2}:\d{2})\s\w+\s\w\s(?<address>\d+\.\d+\.\d+\.\d+)\s-\s-\s\[\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s\+\d{4}\]\s"(?<method>GET|POST|PUT|DELETE|PATCH)\s(?<url>[^\s]+)\sHTTP\/\d\.\d"\s(?<response_code>\d{3})\s(?<size>\d+)\s"(?<referer>[^\"]+)"\s"(?<client>[^\"]+)"
+    [PARSER]
+        Name        custom-ingress-nginx
+        Format      regex
+        Regex       ^(?<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+\+\d{2}:\d{2})\s\w+\s\w\s(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time_utc>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)") (?<bytes_sent>\d+) (?<request_time>\S+) \[(?<service_name>[^\]]*)\]
+        #Time_Key time
+        #Time_Format %d/%b/%Y:%H:%M:%S %z
+        Types       size:integer
+

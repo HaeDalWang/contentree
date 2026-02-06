@@ -1,0 +1,12 @@
+production: true
+auth:
+  adminUser: admin
+  existingSecret: keycloak
+  passwordSecretKey: admin-password
+proxy: edge
+service:
+  type: ClusterIP
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hostname: dev-mkube-keycloak.joins.net

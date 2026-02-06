@@ -1,0 +1,99 @@
+loki: #https://github.com/grafana/loki/blob/main/production/helm/loki/values.yaml???
+  enabled: true
+  isDefault: true
+  url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 45
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 45
+  datasource:
+    jsonData: "{}"
+    uid: ""
+  nodeSelector:
+    role: infra
+  persistence:
+    enabled: true
+    storageClassName: ""   # POC: default SC 사용. Ceph 있으면 "ceph-block" 등으로 변경
+    accessModes:
+    - ReadWriteOnce
+    size: 20Gi
+  config:
+    chunk_store_config:
+      max_look_back_period: 336h
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 336h
+  service:
+    type: NodePort
+    port: 3100 
+    nodePort: 30310
+
+promtail: #https://github.com/grafana/helm-charts/blob/main/charts/promtail/values.yaml
+  enabled: true
+  config: #https://github.com/grafana/helm-charts/blob/main/charts/promtail/values.yaml#L392
+    logLevel: info
+    serverPort: 3101
+    clients:
+      - url: http://{{ .Release.Name }}:3100/loki/api/v1/push
+
+grafana: #https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
+  enabled: true
+  sidecar:
+    datasources:
+      label: ""
+      labelValue: ""
+      enabled: true
+      maxLines: 1000
+  image:
+    tag: 10.3.3
+  ingress:
+    enabled: true
+    hosts:
+      - dev-mk8s-loki-grafana.joins.seungdobae.com
+    annotations:
+      kubernetes.io/ingress.class: nginx # Use the appropriate ingress class for your cluster
+    path: /
+    pathType: Prefix
+  adminPassword: "Infra!@34"
+  #persistence:
+  #  enabled: true
+  nodeSelector:
+    role: infra
+  env:
+    HTTP_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
+    HTTPS_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
+    NO_PROXY: localhost,127.0.0.1,prometheus,svc.cluster.local,loki-stack
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'grafana-lab'
+        orgId: 1
+        folder: 'Kubernetes'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/grafana-lab
+  dashboards:
+    grafana-lab:
+      loki-log:
+        gnetId: 13639
+        revision: 2
+        datasource: default
+      event-exporter-dashboard:
+        gnetId: 17882
+        revision: 2
+        datasource: default
+  downloadDashboards:
+    env:
+      http_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
+      https_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
+      NO_PROXY: localhost,127.0.0.1,prometheus,svc.cluster.local,loki-stack

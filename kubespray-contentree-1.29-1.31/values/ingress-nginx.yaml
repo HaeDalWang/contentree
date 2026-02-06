@@ -1,0 +1,16 @@
+controller:
+  hostNetwork: true
+  kind: DaemonSet
+  service:
+    type: ClusterIP
+  nodeSelector:
+    role: router
+  extraArgs:
+    default-ssl-certificate: ingress-nginx/tls-joins-seungdobae-com
+  allowSnippetAnnotations: true
+  config:
+    proxy-body-size: 1g
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true

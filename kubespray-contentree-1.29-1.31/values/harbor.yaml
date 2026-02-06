@@ -1,0 +1,74 @@
+expose:
+  ingress:
+    hosts:
+      core: dev-mkube-harbor.joins.seungdobae.com
+    className: nginx
+  tls:
+    certSource: none
+externalURL: https://dev-mkube-harbor.joins.seungdobae.com
+proxy:
+  httpProxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
+  httpsProxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
+nginx:
+  nodeSelector:
+    role: ci
+portal:
+  nodeSelector:
+    role: ci
+core:
+  nodeSelector:
+    role: ci
+jobservice:
+  nodeSelector:
+    role: ci
+registry:
+  nodeSelector:
+    role: ci
+chartmuseum:
+  nodeSelector:
+    role: ci
+trivy:
+  nodeSelector:
+    role: ci
+notary:
+  nodeSelector:
+    role: ci
+database:
+  internal:
+    nodeSelector:
+      role: ci
+redis:
+  internal:
+    nodeSelector:
+      role: ci
+exporter:
+  nodeSelector:
+    role: ci
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      storageClass: ceph-filesystem
+      accessMode: ReadWriteMany
+      size: 100Gi
+    chartmuseum:
+      storageClass: ceph-filesystem
+      accessMode: ReadWriteMany
+      size: 5Gi
+    jobservice:
+      jobLog:
+        storageClass: ceph-filesystem
+        accessMode: ReadWriteMany
+        size: 1Gi
+    database:
+      storageClass: ceph-block
+      accessMode: ReadWriteOnce
+      size: 8Gi
+    redis:
+      storageClass: ceph-block
+      accessMode: ReadWriteOnce
+      size: 8Gi
+    trivy:
+      storageClass: ceph-block
+      accessMode: ReadWriteOnce
+      size: 5Gi

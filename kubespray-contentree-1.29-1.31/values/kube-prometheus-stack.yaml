@@ -1,0 +1,117 @@
+fullnameOverride: kube-prometheus
+prometheusOperator:
+  nodeSelector:
+    role: infra
+  admissionWebhooks:
+    patch:
+      nodeSelector:
+        role: infra
+prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+    - dev-mkube-prometheus.joins.seungdobae.com
+    annotations:
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: basic-auth
+  prometheusSpec:
+    retention: 30d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    nodeSelector:
+      role: infra
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+alertmanager:
+  config:
+    global:
+      http_config:
+        proxy_url: http://dev-mkube-proxy.joins.seungdobae.com:3128
+    route:
+      receiver: ta
+      routes: null
+    receivers:
+    - name: ta
+      slack_configs:
+      - api_url: ""  # 배포 시 Slack Incoming Webhook URL 설정 (시크릿 노출 방지)
+        channel: "#jcon-mkube-dev-alert"
+        send_resolved: true
+        title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Monitoring Event Notification'
+        text: >-
+          {{ range .Alerts }}
+            *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+            *Description:* {{ .Annotations.description }}
+            *Details:*
+            {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+            {{ end }}
+          {{ end }}
+
+  alertmanagerSpec:
+    nodeSelector:
+      role: infra
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+    - dev-mkube-alertmanager.joins.seungdobae.com
+    annotations:
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: basic-auth
+grafana:
+  admin:
+    existingSecret: grafana
+  plugins:
+  - grafana-piechart-panel
+  nodeSelector:
+    role: infra
+  env:
+    HTTP_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
+    HTTPS_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
+    NO_PROXY: localhost,127.0.0.1,prometheus,svc.cluster.local
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+    - dev-mkube-grafana.joins.seungdobae.com
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'grafana-lab'
+        orgId: 1
+        folder: 'Kubernetes'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/grafana-lab
+  dashboards:
+    grafana-lab:
+      all-in-one:
+        gnetId: 13770
+        revision: 1
+        datasource: default
+      ingress-nginx:
+        gnetId: 9614
+        revision: 1
+        datasource: default
+      cert-expire:
+        gnetId: 13922
+        revision: 3
+        datasource: default
+      rook-ceph:
+        gnetId: 2842
+        revision: 16
+        datasource: default
+  downloadDashboards:
+    env:
+      http_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
+      https_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128

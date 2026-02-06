@@ -1,0 +1,29 @@
+mode: standalone
+existingSecret: minio
+nodeSelector:
+  role: infra   # POC: storage 노드 없음. Ceph/스토리지 노드 있으면 role: storage
+resources:
+  requests:
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+securityContext:
+  enabled: true
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 0
+persistence:
+  existingClaim: minio
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+  - dev-mkube-minioapi.joins.seungdobae.com
+consoleIngress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+  - dev-mkube-minio.joins.seungdobae.com
+buckets:
+- name: velero
+- name: jenkins

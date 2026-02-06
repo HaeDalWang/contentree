@@ -1,0 +1,149 @@
+cephClusterSpec:
+  cephVersion:
+    image: quay.io/ceph/ceph:v17.2.5
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+    nodes:
+    - name: "mvd-kubest01"
+      devices:
+      - name: "sdb"
+    - name: "mvd-kubest02"
+      devices:
+      - name: "sdb"
+    - name: "mvd-kubest03"
+      devices:
+      - name: "sdb"
+  placement:
+    all:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - storage
+  crashCollector:
+    disable: true
+  dashboard:
+    enabled: true
+    ssl: false
+cephFileSystems:
+- name: ceph-filesystem
+  spec:
+    metadataPool:
+      replicated:
+        size: 3
+    dataPools:
+    - failureDomain: host
+      replicated:
+        size: 3
+      name: data0
+    metadataServer:
+      activeCount: 1
+      activeStandby: true
+      resources:
+        limits:
+          cpu: "2000m"
+          memory: "4Gi"
+        requests:
+          cpu: "1000m"
+          memory: "4Gi"
+      priorityClassName: system-cluster-critical
+      placement:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - storage
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 50
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - rook-ceph-mds
+              topologyKey: kubernetes.io/hostname 
+  storageClass:
+    enabled: true
+    isDefault: false
+    name: ceph-filesystem
+    pool: data0
+    reclaimPolicy: Delete
+    allowVolumeExpansion: true
+    volumeBindingMode: "Immediate"
+    mountOptions: []
+    parameters:
+      csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+      csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
+      csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+      csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
+      csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+      csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+      csi.storage.k8s.io/fstype: ext4
+cephObjectStores:
+- name: ceph-objectstore
+  spec:
+    metadataPool:
+      failureDomain: host
+      replicated:
+        size: 3
+    dataPool:
+      failureDomain: host
+      erasureCoded:
+        dataChunks: 2
+        codingChunks: 1
+    preservePoolsOnDelete: true
+    gateway:
+      port: 80
+      resources:
+        limits:
+          cpu: "2000m"
+          memory: "2Gi"
+        requests:
+          cpu: "1000m"
+          memory: "1Gi"
+      instances: 1
+      priorityClassName: system-cluster-critical
+      placement:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - storage
+  storageClass:
+    enabled: true
+    name: ceph-bucket
+    reclaimPolicy: Delete
+    volumeBindingMode: "Immediate"
+    parameters:
+      region: us-east-1
+ingress:
+  dashboard:
+    ingressClassName: nginx
+    host: 
+      name: dev-mkube-ceph.joins.net
+toolbox:
+  enabled: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: role
+              operator: In
+              values:
+              - storage
+monitoring:
+  enabled: true
+  createPrometheusRules: true

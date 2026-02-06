@@ -1,0 +1,67 @@
+snapshotsEnabled: false
+deployNodeAgent: true
+nodeSelector:
+  role: infra
+initContainers:
+- name: velero-plugin-for-aws
+  image: velero/velero-plugin-for-aws:v1.7.0
+  imagePullPolicy: IfNotPresent
+  volumeMounts:
+  - mountPath: /target
+    name: plugins
+configuration:
+  backupStorageLocation:
+  - provider: aws
+    bucket: velero
+    config:
+      region: ap-northeast-2
+      s3Url: http://minio.minio.svc.cluster.local:9000
+      s3ForcePathStyle: true
+  extraEnvVars:
+    TZ: Asia/Seoul
+credentials:
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id=console
+      aws_secret_access_key=console123
+configMaps:
+  fs-restore-action-config:
+    labels:
+      velero.io/plugin-config: ""
+      velero.io/pod-volume-restore: RestoreItemAction
+    data:
+      secCtx: |
+        capabilities:
+          drop:
+          - ALL
+        seccompProfile:
+          type: RuntimeDefault
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+  prometheusRule:
+    enabled: true
+    spec:
+    - alert: VeleroBackupPartialFailures
+      annotations:
+        message: Velero backup {{ $labels.schedule }} has {{ $value | humanizePercentage }} partialy failed backups.
+      expr: |-
+        velero_backup_partial_failure_total{schedule!=""} / velero_backup_attempt_total{schedule!=""} > 0.25
+      for: 15m
+      labels:
+        severity: warning
+    - alert: VeleroBackupFailures
+      annotations:
+        message: Velero backup {{ $labels.schedule }} has {{ $value | humanizePercentage }} failed backups.
+      expr: |-
+        velero_backup_failure_total{schedule!=""} / velero_backup_attempt_total{schedule!=""} > 0.25
+      for: 15m
+      labels:
+        severity: warning
