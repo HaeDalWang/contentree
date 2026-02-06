@@ -114,8 +114,9 @@ kube_proxy_metrics_bind_address: 0.0.0.0:10249
 ## etcd
 etcd_metrics_port: 2381
 etcd_deployment_type: kubeadm
+# listen-metrics-urls: 노드별 IP 시 첫 CP IP(10.150.46.16)가 cp02/cp03에 적용되어 bind 실패 → 0.0.0.0으로 통일
 etcd_extra_vars:
-  listen-metrics-urls: "http://{{ ansible_default_ipv4.address }}:{{ etcd_metrics_port }}"
+  listen-metrics-urls: "http://0.0.0.0:{{ etcd_metrics_port }}"
 etcd_quota_backend_bytes: 8589934592
 
 ## kubelet
