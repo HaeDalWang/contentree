@@ -38,15 +38,16 @@ alertmanager:
         send_resolved: true
 
   alertmanagerSpec:
-  ingress:
-    enabled: true
-    ingressClassName: nginx
-    hosts:
-    - dev-mkube-alertmanager.joins.seungdobae.com
-    annotations:
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/auth-type: basic
-      nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    portName: web
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+      - dev-mkube-alertmanager.joins.seungdobae.com
+      annotations:
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-secret: basic-auth
 grafana:
   admin:
     existingSecret: grafana
