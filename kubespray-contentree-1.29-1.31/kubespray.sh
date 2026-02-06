@@ -4,7 +4,7 @@
 KUBESPRAY_DIR=$(pwd)
 INVENTORY_DIR="${KUBESPRAY_DIR}/inventory"
 
-IMAGE="quay.io/kubespray/kubespray:v2.24.3" # 콘텐트리중앙 현재 사용하는 컨테이너 (2026_02_06) 1.29
+IMAGE="quay.io/kubespray/kubespray:v2.25.1" # 콘텐트리중앙 현재 사용하는 컨테이너 (2026_02_06) 1.29
 # IMAGE="quay.io/kubespray/kubespray:v2.27.1" # kubernetes v1.31.9가 기본값인 컨테이너 1.29 지원
 
 # 필요한 디렉토리 생성
