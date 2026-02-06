@@ -45,3 +45,10 @@ mlops/lambdas/build/
 # Secrets - 절대 커밋 금지!
 helm/argocd-github-secret.yaml
 *.secret.yaml
+
+# Archive with possible secrets (do not commit)
+k8s-2026_02_05.tar
+*.tar
+
+# Vault unseal/root token - do not commit real cluster-keys.json
+# k8s/helmchart/vault/json/cluster-keys.json
