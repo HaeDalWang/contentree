@@ -8,7 +8,11 @@ tolerations:
 csi:
   enableRbdDriver: false
   enableCephfsDriver: true
-  provisionerNodeAffinity: role=worker
+  provisionerNodeAffinity: role=worker,master
+  provisionerTolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
   pluginNodeAffinity: role=worker,infra
   provisionerReplicas: 1
 admissionController:
