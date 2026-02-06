@@ -75,7 +75,8 @@ releases:
 # - name: fluent-bit-all-service-opensearch
 #   ...
 
-# kube-prometheus-stack: CRD(Alertmanager, Prometheus, PrometheusRule, ServiceMonitor)가 없으면 배포 실패.
+# kube-prometheus-stack: helmfile은 diff 시 매니페스트를 먼저 렌더·검증하는데, 이때 CRD가 없으면
+# "no matches for kind Alertmanager/Prometheus..." 로 실패 (prometheus-community/helm-charts#2217).
 # 최초 1회: ./install-prometheus-crds.sh 실행 후 helmfile apply
 - name: kube-prometheus-stack
   namespace: prometheus
