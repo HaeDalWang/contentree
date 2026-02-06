@@ -65,10 +65,6 @@ grafana: #https://github.com/grafana/helm-charts/blob/main/charts/grafana/values
   #  enabled: true
   nodeSelector:
     role: infra
-  env:
-    HTTP_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
-    HTTPS_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
-    NO_PROXY: localhost,127.0.0.1,prometheus,svc.cluster.local,loki-stack
 
   dashboardProviders:
     dashboardproviders.yaml:
@@ -92,8 +88,4 @@ grafana: #https://github.com/grafana/helm-charts/blob/main/charts/grafana/values
         gnetId: 17882
         revision: 2
         datasource: default
-  downloadDashboards:
-    env:
-      http_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
-      https_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
-      NO_PROXY: localhost,127.0.0.1,prometheus,svc.cluster.local,loki-stack
+  downloadDashboards: {}

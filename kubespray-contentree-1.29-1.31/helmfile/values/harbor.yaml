@@ -6,9 +6,6 @@ expose:
   tls:
     certSource: none
 externalURL: https://dev-mkube-harbor.joins.seungdobae.com
-proxy:
-  httpProxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
-  httpsProxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
 nginx:
   nodeSelector:
     role: ci

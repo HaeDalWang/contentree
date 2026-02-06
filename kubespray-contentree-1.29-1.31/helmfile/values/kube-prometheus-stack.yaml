@@ -28,12 +28,10 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              storage: 1Gi
 alertmanager:
   config:
-    global:
-      http_config:
-        proxy_url: http://dev-mkube-proxy.joins.seungdobae.com:3128
+    global: {}
     route:
       receiver: ta
       routes: null
@@ -43,15 +41,6 @@ alertmanager:
       - api_url: ""  # 배포 시 Slack Incoming Webhook URL 설정 (시크릿 노출 방지)
         channel: "#jcon-mkube-dev-alert"
         send_resolved: true
-        title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Monitoring Event Notification'
-        text: >-
-          {{ range .Alerts }}
-            *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
-            *Description:* {{ .Annotations.description }}
-            *Details:*
-            {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
-            {{ end }}
-          {{ end }}
 
   alertmanagerSpec:
     nodeSelector:
@@ -72,10 +61,6 @@ grafana:
   - grafana-piechart-panel
   nodeSelector:
     role: infra
-  env:
-    HTTP_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
-    HTTPS_PROXY: http://dev-mkube-proxy.joins.seungdobae.com:3128
-    NO_PROXY: localhost,127.0.0.1,prometheus,svc.cluster.local
   ingress:
     enabled: true
     ingressClassName: nginx
@@ -111,7 +96,4 @@ grafana:
         gnetId: 2842
         revision: 16
         datasource: default
-  downloadDashboards:
-    env:
-      http_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
-      https_proxy: http://dev-mkube-proxy.joins.seungdobae.com:3128
+  downloadDashboards: {}

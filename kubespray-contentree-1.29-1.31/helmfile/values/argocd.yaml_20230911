@@ -9,29 +9,6 @@ server:
     - dev-mkube-argocd.joins.net
     annotations:
       nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-  env:
-  - name: HTTP_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: HTTPS_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: NO_PROXY
-    value: argocd-repo-server,argocd-application-controller,argocd-metrics,argocd-server,argocd-server-metrics,argocd-redis,argocd-dex-server,10.233.0.0/16,dev-mkube-harbor.joins.net,dev-mkube-keycloak.joins.net
-repoServer:
-  env:
-  - name: HTTP_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: HTTPS_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: NO_PROXY
-    value: argocd-repo-server,argocd-application-controller,argocd-metrics,argocd-server,argocd-server-metrics,argocd-redis,argocd-dex-server,10.233.0.0/16,dev-mkube-harbor.joins.net,dev-mkube-keycloak.joins.net
-dex:
-  env:
-  - name: HTTP_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: HTTPS_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: NO_PROXY
-    value: argocd-repo-server,argocd-application-controller,argocd-metrics,argocd-server,argocd-server-metrics,argocd-redis,argocd-dex-server,10.233.0.0/16,dev-mkube-harbor.joins.net,dev-mkube-keycloak.joins.net
 configs:
   params:
     "server.insecure": true
@@ -58,13 +35,6 @@ configs:
       g, frontend, role:frontend
 notifications:
   argocdUrl: https://dev-mkube-argocd.joins.net
-  extraEnv:
-  - name: HTTP_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: HTTPS_PROXY
-    value: http://dev-mkube-proxy.joins.net:3128
-  - name: NO_PROXY
-    value: argocd-repo-server,argocd-application-controller,argocd-metrics,argocd-server,argocd-server-metrics,argocd-redis,argocd-dex-server,10.233.0.0/16,dev-mkube-harbor.joins.net,dev-mkube-keycloak.joins.net
   secret:
     items:
       slack-token: ""  # 배포 시 Slack Bot Token 설정 (시크릿 노출 방지)
