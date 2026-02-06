@@ -27,6 +27,11 @@ resource "aws_instance" "ansible_controller" {
   iam_instance_profile        = aws_iam_instance_profile.ssm_profile.name
   vpc_security_group_ids      = [aws_security_group.kubernetes.id]
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     snap install amazon-ssm-agent --classic
@@ -48,6 +53,11 @@ resource "aws_instance" "mvd_kubecp01" {
   instance_type        = "t3.medium"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   user_data = <<-EOF
     #!/bin/bash
@@ -72,6 +82,11 @@ resource "aws_instance" "mvd_kubecp02" {
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     snap install amazon-ssm-agent --classic
@@ -94,6 +109,11 @@ resource "aws_instance" "mvd_kubecp03" {
   instance_type        = "t3.medium"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   user_data = <<-EOF
     #!/bin/bash
@@ -121,6 +141,11 @@ resource "aws_instance" "mvd_kubewk01" {
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     snap install amazon-ssm-agent --classic
@@ -144,6 +169,11 @@ resource "aws_instance" "mvd_kubewk02" {
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     snap install amazon-ssm-agent --classic
@@ -166,6 +196,11 @@ resource "aws_instance" "mvd_kubewk03" {
   instance_type        = "t3.medium"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   user_data = <<-EOF
     #!/bin/bash
@@ -192,6 +227,11 @@ resource "aws_instance" "mvd_kubert01" {
   instance_type        = "t3.medium"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   user_data = <<-EOF
     #!/bin/bash
