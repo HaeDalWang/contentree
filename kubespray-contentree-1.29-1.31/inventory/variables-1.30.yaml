@@ -95,10 +95,8 @@ kube_controller_terminated_pod_gc_threshold: 50
 kube_controller_feature_gates:
 - RotateKubeletServerCertificate=true
 
-## kube-scheduler
+## kube-scheduler (profiling은 kube_profiling로 통일, 여기 중복 시 kubeadm v1beta3 strict decode 오류)
 kube_scheduler_bind_address: 0.0.0.0
-kube_kubeadm_scheduler_extra_args:
-  profiling: false
 
 ## kube-proxy
 kube_proxy_metrics_bind_address: 0.0.0.0:10249
