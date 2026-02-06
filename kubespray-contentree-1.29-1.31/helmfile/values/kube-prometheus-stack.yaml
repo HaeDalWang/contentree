@@ -2,6 +2,7 @@ fullnameOverride: kube-prometheus
 prometheusOperator:
   admissionWebhooks:
     patch:
+      enabled: true
 prometheus:
   ingress:
     enabled: true
