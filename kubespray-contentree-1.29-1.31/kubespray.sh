@@ -25,7 +25,6 @@ docker run --name kubespray \
   --detach \
   --restart always \
   --mount type=bind,source="${INVENTORY_DIR}",dst=/kubespray/inventory \
-  --mount type=bind,source="${KUBESPRAY_DIR}/extra_playbooks",dst=/kubespray/extra_playbooks \
   --mount type=bind,source="${KUBESPRAY_DIR}/artifacts",dst=/kubespray/artifacts \
   --mount type=bind,source="${SSH_KEY}",dst=/root/.ssh/id_rsa,readonly \
   --env ANSIBLE_HOST_KEY_CHECKING=False \
