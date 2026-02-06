@@ -44,6 +44,28 @@ echo "Docker 설치 완료!"
 docker --version
 docker compose version
 
+#---------------------------------------------------------------
+# Helm 설치 (공식 스크립트)
+#---------------------------------------------------------------
+if ! command -v helm &>/dev/null; then
+  echo "Helm 설치 중..."
+  curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+fi
+echo "Helm: $(helm version --short 2>/dev/null || helm version -s 2>/dev/null)"
+
+#---------------------------------------------------------------
+# Helmfile 설치 (바이너리 다운로드)
+#---------------------------------------------------------------
+HELMFILE_VERSION="${HELMFILE_VERSION:-0.169.2}"
+HELMFILE_BIN="/usr/local/bin/helmfile"
+if ! command -v helmfile &>/dev/null; then
+  echo "Helmfile ${HELMFILE_VERSION} 설치 중..."
+  curl -fsSL "https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_$(dpkg --print-architecture).tar.gz" \
+    | sudo tar -xzf - -C /usr/local/bin helmfile
+  sudo chmod +x "$HELMFILE_BIN"
+fi
+echo "Helmfile: $(helmfile --version 2>/dev/null || true)"
+
 echo ""
 echo "주의: docker 그룹 적용을 위해 로그아웃 후 다시 로그인하거나 다음 명령어를 실행하세요:"
 echo "  newgrp docker"
