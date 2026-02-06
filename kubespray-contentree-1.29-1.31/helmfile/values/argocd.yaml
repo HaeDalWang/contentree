@@ -1,6 +1,7 @@
-global:
-  nodeSelector:
-    role: infra
+# POC: role=infra 노드 없음. 필요 시 워커/라우터에 role=infra 라벨 부여 후 nodeSelector 복원
+# global:
+#   nodeSelector:
+#     role: infra
 server:
   ingress:
     enabled: true
