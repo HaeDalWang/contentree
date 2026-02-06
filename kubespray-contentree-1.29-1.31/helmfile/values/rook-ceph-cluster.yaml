@@ -25,7 +25,7 @@ cephClusterSpec:
                 operator: In
                 values:
                 - worker
-    # mgr: 워커 CPU 부족 시 CP에서도 스케줄되도록
+    # mgr: 워커 CPU 부족 시 CP에서도 스케줄 (role=worker 또는 control-plane 라벨)
     mgr:
       tolerations:
         - key: node-role.kubernetes.io/control-plane
@@ -35,11 +35,13 @@ cephClusterSpec:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
-              - key: role
-                operator: In
-                values:
-                - worker
-                - master
+                - key: role
+                  operator: In
+                  values:
+                    - worker
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
   crashCollector:
     disable: true
   dashboard:

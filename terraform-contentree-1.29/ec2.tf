@@ -137,7 +137,7 @@ resource "aws_instance" "mvd_kubecp03" {
 #---------------------------------------------------------------
 resource "aws_instance" "mvd_kubewk01" {
   ami                  = data.aws_ami.ubuntu_24_lts.id
-  instance_type        = "t3.large"
+  instance_type        = "t3a.xlarge"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
@@ -165,7 +165,7 @@ resource "aws_instance" "mvd_kubewk01" {
 
 resource "aws_instance" "mvd_kubewk02" {
   ami                  = data.aws_ami.ubuntu_24_lts.id
-  instance_type        = "t3.large"
+  instance_type        = "t3a.xlarge"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
@@ -193,7 +193,7 @@ resource "aws_instance" "mvd_kubewk02" {
 
 resource "aws_instance" "mvd_kubewk03" {
   ami                  = data.aws_ami.ubuntu_24_lts.id
-  instance_type        = "t3.large"
+  instance_type        = "t3a.xlarge"
   key_name             = data.aws_key_pair.ansible.key_name
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
