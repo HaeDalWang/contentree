@@ -11,6 +11,6 @@ controller:
   config:
     proxy-body-size: 1g
   metrics:
-    enabled: true
+    enabled: false
     serviceMonitor:
-      enabled: true
+      enabled: false

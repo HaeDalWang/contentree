@@ -146,5 +146,5 @@ toolbox:
               values:
               - worker
 monitoring:
-  enabled: true
-  createPrometheusRules: true
+  enabled: false
+  createPrometheusRules: false

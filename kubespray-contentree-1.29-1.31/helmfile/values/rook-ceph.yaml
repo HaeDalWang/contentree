@@ -1,0 +1,15 @@
+# 워커 노드 기준 룩셉 테스트. operator는 CP에도 올릴 수 있게 해서 워커 CPU 부족 완화
+nodeSelector: {}
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+# CSI는 워커에만 (스토리지 노드와 동일)
+csi:
+  provisionerNodeAffinity: role=worker
+  pluginNodeAffinity: role=worker,infra
+  provisionerReplicas: 1
+admissionController:
+  nodeAffinity: role=worker
+monitoring:
+  enabled: true
